@@ -2,7 +2,7 @@
 
 import mysql.connector
 from mysql.connector import errorcode
-from mysql.connector import Error as err
+
 
 
 class MysqlConnector:
@@ -20,13 +20,15 @@ CREATE TABLE tweets (
         # Establecer la conexión a la base de datos
         try:
             self.cnx = mysql.connector.connect(user, password, host, database)
-        except err:
+        except mysql.connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                print("Usuario o contraseña incorrectos")
+                print("Something is wrong with your user name or password")
             elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                print("La base de datos no existe")
+                print("Database does not exist")
             else:
                 print(err)
+        else:
+            cnx.close()
 
     # Crear la tabla para los tweets
 cursor = cnx.cursor()
