@@ -1,14 +1,12 @@
-#!/bin/python3
-
 import mysql.connector
 from mysql.connector import errorcode
-
 
 
 class MysqlConnector:
     def __init__(self):
         self.cnx = 0
-        self.tabla_tweets = """
+
+        self.TABLA_TWEETS = """
 CREATE TABLE tweets (
   id INT AUTO_INCREMENT PRIMARY KEY,
   tweet VARCHAR(255) NOT NULL,
@@ -28,33 +26,50 @@ CREATE TABLE tweets (
             else:
                 print(err)
         else:
-            cnx.close()
+            self.cnx.close()
 
-    # Crear la tabla para los tweets
-cursor = cnx.cursor()
+    def create_tweet_table(self):
 
-tabla_tweets = """
-CREATE TABLE tweets (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  tweet VARCHAR(255) NOT NULL
-)
+        cursor = self.cnx.cursor()
+        
+        try:
+            cursor.execute(self.TABLA_TWEETS)
+        except mysql.connector.Error as err:
+            print(f"Error al crear la tabla: {err}")
+        else:
+            print("Tabla creada correctamente")
+
+
+    def insert_tweet_on_table(self, tweets):
+
+        cursor = self.get_cursor()
+
+        for tweet in tweets:
+            
+            agregar_tweet = """
+INSERT INTO tweets (tweet) VALUES (%s)
 """
+        cursor.execute(agregar_tweet, (tweet,))
+        
+        self.cnx.commit()
+        cursor.close()
+        self.cnx.close()
 
-try:
-    cursor.execute(tabla_tweets)
-except mysql.connector.Error as err:
-    print(f"Error al crear la tabla: {err}")
-else:
-    print("Tabla creada correctamente")
 
-# Recorrer los tweets y guardarlos en la base de datos
-for tweet in tweets:
-    agregar_tweet = """
-    INSERT INTO tweets (tweet) VALUES (%s)
-    """
-    cursor.execute(agregar_tweet, (tweet,))
+    def get_tweets_from_table(self):
+        
+        cursor = self.cnx.cursor()
+       
+        query = "SELECT tweet,sentiment FROM tweets"
+        
+        cursor.execute(query)
 
-# Confirmar los cambios y cerrar la conexión
-cnx.commit()
-cursor.close()
-cnx.close()
+        tweets = cursor.fetchall()
+
+        cursor.close()
+
+        self.cnx.close()
+
+        return tweets
+
+
