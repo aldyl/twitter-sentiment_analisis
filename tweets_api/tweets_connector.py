@@ -31,3 +31,4 @@ class TwitterConnector:
         # Obtener los tweets relevantes
         tweets = self.api.search_tweets(q=search_sentence, count=cant_results)
         return tweets
+ 
