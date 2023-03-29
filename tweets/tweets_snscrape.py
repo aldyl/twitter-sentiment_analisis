@@ -62,23 +62,28 @@ class SnscrapeTwiteer:
         # Impact value
         impact = int(tweet.retweetCount) + int(tweet.likeCount)
 
-        # Data Frame Key Id, Date, Content, Impact
-        tweet_list.append([tweet.id, tweet.date, content, impact])
+        # Sentiment Objetivity
+        polarity, objetivity = self.tweet_handler.get_tweet_sentiment(content)
+
+        # Remove tweet without objetive
+        if objetivity > 0.1:
+            # Data Frame Key Id, Date, Content, Impact, Polarity, Objective
+            tweet_list.append([tweet.id, tweet.date, content, impact, polarity, objetivity ])
 
         return tweet_list
+    
+
 
     def tweet_to_csv(self, tweets_list, file_src):
 
         tweets_df = pd.DataFrame(tweets_list, columns=[
-                                 'Id', 'Date', 'Content', 'Impact'])
+                                 'Id', 'Date', 'Content', 'Impact', 'Polarity', 'Objetivity', ])
         tweets_df.to_csv(file_src, sep=';', decimal=',')
-
-        # Data Frame Key Id, Date, Content, RetweetCount, LikeCount
 
     def tweet_to_json(self, tweets_list,  file_src):
 
         tweets_df = pd.DataFrame(tweets_list, columns=[
-                                 'Id', 'Date', 'Content', 'Impact'])
+                                 'Id', 'Date', 'Content', 'Impact', 'Polarity', 'Objetivity', ])
         tweets_df.to_json(file_src)
 
     def load_from_cvs(self, file_src):
@@ -92,6 +97,6 @@ class SnscrapeTwiteer:
 
 sn = SnscrapeTwiteer()
 
-tweets = sn.get_by_query("inmigrantes+muertos+mexico",
+tweets = sn.get_by_query("inmigrantes mexico",
                          100, since='2023-01-01', until='2023-03-29')
-sn.tweet_to_json(tweets, 'file.json')
+sn.tweet_to_json(tweets, 'util/file.json')

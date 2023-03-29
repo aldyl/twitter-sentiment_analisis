@@ -30,7 +30,7 @@ class Tweets:
         stop_words = set(stopwords.words(lang))
         words = [w for w in words if not w in stop_words]
 
-        # derivado de las palabras
+        # derivado de las palabras a su base
         porter = PorterStemmer()
         words = [porter.stem(word) for word in words]
 
@@ -49,22 +49,14 @@ class Tweets:
         return top_words
 
 
-    def get_tweets_sentiment_subjectivity(self, tweets):
-        # Analizar el sentimiento de los tweets
+    def get_tweet_sentiment(self, tweet):
+        # Analizar el sentimiento de los tweet
+ 
+        sentiment = TextBlob(str(tweet)).sentiment
 
-        sentiments = []
-        subjectivitys = []
+        polarity = sentiment.polarity
+        subjectivity = sentiment.subjectivity
 
-        for tweet in tweets:
-            text = tweet.text
-            sentiment = TextBlob(text).sentiment
-
-            polarity = sentiment.polarity
-            subjectivity = sentiment.subjectivity
-
-            sentiments.append(polarity)
-            subjectivitys.append(subjectivity)
-
-        return sentiments, subjectivitys
+        return polarity, subjectivity
         
 
