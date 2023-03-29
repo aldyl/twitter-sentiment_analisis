@@ -3,8 +3,10 @@
 from deep_translator.google import GoogleTranslator
 
 
-class Translate:
+class TranslateGoogle:
+
     def __init__(self, source='auto', tarjet='en') -> None:
+        
         self.babylon = GoogleTranslator(source, tarjet)
         self.lang = 'english'
 

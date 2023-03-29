@@ -12,6 +12,7 @@ nltk = "*"
 deep-translator = "*"
 snscrape = "*"
 pandas = "*"
+async-google-trans-new = "*"
 
 [dev-packages]
 autopep8 = "*"
