@@ -34,7 +34,7 @@ class Tweets:
         porter = PorterStemmer()
         words = [porter.stem(word) for word in words]
 
-        return " " + words
+        return ' '.join(map(str, words))
     
     def most_used_words(self, tweets, count=10):
         # Obtener las palabras más utilizadas en los tweets

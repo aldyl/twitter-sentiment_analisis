@@ -3,3 +3,5 @@ textblob
 mysql-connector-python
 nltk
 deep_translator
+snscrape
+pandas

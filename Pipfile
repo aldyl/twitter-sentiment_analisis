@@ -10,6 +10,8 @@ mysql-connector-python = "*"
 pylint = "*"
 nltk = "*"
 deep-translator = "*"
+snscrape = "*"
+pandas = "*"
 
 [dev-packages]
 autopep8 = "*"
