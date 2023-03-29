@@ -40,8 +40,7 @@ class Tweets:
         # Obtener las palabras más utilizadas en los tweets
         words = []
         for tweet in tweets:
-            text = tweet.text
-            words += text.split()
+            words += tweet.split()
 
         word_counts = Counter(words)
         top_words = word_counts.most_common(count)

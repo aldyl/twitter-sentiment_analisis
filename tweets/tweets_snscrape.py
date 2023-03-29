@@ -1,7 +1,7 @@
 
 import pandas as pd
-from tweets_handler import Tweets
-from translate import Translate
+from tweets.tweets_handler import Tweets
+from tweets.translate import Translate
 from snscrape.modules.twitter import TwitterSearchScraper
 
 
@@ -72,6 +72,14 @@ class SnscrapeTwiteer:
 
         return tweet_list
     
+    def get_most_used_words(self, tweets_list, cant):
+
+        tweets_content_list = []
+
+        for tweet in tweets_list:
+            tweets_content_list.append(tweet[2])
+     
+        return self.tweet_handler.most_used_words(tweets_content_list, count=cant)
 
 
     def tweet_to_csv(self, tweets_list, file_src):
@@ -93,10 +101,3 @@ class SnscrapeTwiteer:
     def load_from_json(self, file_src):
         data = pd.read_json(file_src)
         return data
-
-
-sn = SnscrapeTwiteer()
-
-tweets = sn.get_by_query("inmigrantes mexico",
-                         100, since='2023-01-01', until='2023-03-29')
-sn.tweet_to_json(tweets, 'util/file.json')
