@@ -9,8 +9,10 @@ textblob = "*"
 mysql-connector-python = "*"
 pylint = "*"
 nltk = "*"
+deep-translator = "*"
 
 [dev-packages]
+autopep8 = "*"
 
 [requires]
 python_version = "3.10"

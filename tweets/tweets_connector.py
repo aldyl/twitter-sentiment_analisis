@@ -8,6 +8,7 @@ CONSUMER_SECRET = 'tu_consumer_secret'
 ACCESS_TOKEN = 'tu_access_token'
 ACCESS_TOKEN_SECRET = 'tu_access_token_secret'
 
+
 class TwitterConnector:
     def __init__(self):
 
@@ -31,4 +32,3 @@ class TwitterConnector:
         # Obtener los tweets relevantes
         tweets = self.api.search_tweets(q=search_sentence, count=cant_results)
         return tweets
- 
