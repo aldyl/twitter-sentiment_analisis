@@ -1,10 +1,11 @@
 import mysql.connector
-from mysql.connector import errorcode
+from mysql.connector import errorcode, Error
 
 
 class MysqlConnector:
     def __init__(self):
-        self.cnx = 0
+        
+        self.cnx = any
 
         self.TABLA_TWEETS = """
 CREATE TABLE tweets (
@@ -14,19 +15,32 @@ CREATE TABLE tweets (
 )
 """
 
-    def connect(self, user='root', password='root', host='localhost', database='tweets_bd'):
+    def connect(self, user_I='root', password_I='root', host_I='localhost', database_I='tweets_bd'):
         # Establecer la conexión a la base de datos
         try:
-            self.cnx = mysql.connector.connect(user, password, host, database)
-        except mysql.connector.Error as err:
+            self.cnx = mysql.connector.connect(user=user_I, password=password_I, host=host_I, database=database_I)
+
+            db_Info = self.cnx.get_server_info()
+            print("Connected to MySQL Server version ", db_Info)
+
+            cursor = self.cnx.cursor()
+            cursor.execute("select database();")
+            record = cursor.fetchone()
+            print("You're connected to database: ", record)
+
+        except Error as err:
+
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                 print("Something is wrong with your user name or password")
             elif err.errno == errorcode.ER_BAD_DB_ERROR:
                 print("Database does not exist")
             else:
                 print(err)
-        else:
+
+    def close(self):
+        if self.cnx.is_connected():
             self.cnx.close()
+            print("MySQL connection is closed")
 
     def create_tweet_table(self):
 

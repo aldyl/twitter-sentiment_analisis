@@ -1,11 +1,12 @@
 
 import string
-import nltk
 import re
 import pandas as pd
 
+import nltk
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
+
 from textblob import TextBlob
 from collections import Counter
 
@@ -90,6 +91,20 @@ class Tweets:
         return top_words
     
 
+    def  get_tweet_frecuency(self, tweets_list):
+
+        sentiments = []
+
+        for tweet in tweets_list:
+
+            sentiments += tweet[4].split()
+        
+        # Calcular la frecuencia del sentimiento de los tweets
+        frecuencias = nltk.FreqDist(sentiments)
+
+        # Mostrar los resultados
+        for sentimiento, frecuencia in frecuencias.items():
+            print(f"{sentimiento}: {frecuencia/len(sentiments)}")
 
 
     def tweet_to_csv(self, tweets_list, file_src):
@@ -103,9 +118,6 @@ class Tweets:
         tweets_df = pd.DataFrame(tweets_list, columns=[
                                  'Id', 'Date', 'Content', 'Impact', 'Polarity', 'Objetivity', ])
         tweets_df.to_json(file_src)
-
-
-
 
     def load_from_cvs(self, file_src):
         data = pd.read_csv(file_src)
