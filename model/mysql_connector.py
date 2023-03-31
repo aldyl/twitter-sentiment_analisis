@@ -61,36 +61,46 @@ CREATE TABLE tweets (
 
 
     def insert_tweet_on_table(self, tweets):
+        
+        cant_tweet_insertados = 0
+        cant_tweet_repetidos = 0
 
+        sql = "INSERT INTO tweets (Id, Date, Content, Impact, Polarity, Objective) VALUES (%s, %s, %s, %s, %s, %s)"
+ 
         cursor = self.cnx.cursor()
-
 
         for tweet in tweets:
             
             if not self.tweet_en_bd(tweet[0]):
                 # Inserción de un nuevo tweet
-                sql = "INSERT INTO tweets (Id, Date, Content, Impact, Polarity, Objective) VALUES (%s, %s, %s, %s, %s, %s)"
-                val = (int(tweet[0]), tweet[1], tweet[2], tweet[3], tweet[4], tweet[5])
-            
+                val = (tweet[0], tweet[1], tweet[2], tweet[3], tweet[4], tweet[5])
+                    
                 try:
                     cursor.execute(sql, val)
                     # Confirmación de cambios
                     self.cnx.commit()
+                    cant_tweet_insertados+=1
                 except mysql.connector.Error as err:
                     print(f"Error al crear el registro: {err}")
+            else:
+                cant_tweet_repetidos+=1
 
-        print(cursor.rowcount, "registros insertados.")
+        print(cant_tweet_insertados, " registros insertados.")
+        print(cant_tweet_repetidos, " registros repetidos.")
                 
       
-
     def tweet_en_bd(self, tweet_id):
         cursor = self.cnx.cursor()
 
         # ejecutar la consulta para verificar si el tweet existe
         consulta = f"SELECT * FROM tweets WHERE Id = {tweet_id}"
-        cursor.execute(consulta)
-        # obtener el resultado de la consulta
-        resultado = cursor.fetchone()
+        
+        try:
+            cursor.execute(consulta)
+            # obtener el resultado de la consulta
+            resultado = cursor.fetchone()
+        except mysql.connector.Error as err:
+                    print(f"Error al ejecutar la consulta: {err}")
 
         # si se encontró el tweet en la base de datos, devolver True
         if resultado is not None:
