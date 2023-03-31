@@ -14,6 +14,7 @@ from collections import Counter
 
 from tweets.translate import TranslateGoogle
 
+
 class Tweets:
 
     def __init__(self) -> None:
@@ -26,7 +27,7 @@ class Tweets:
         content_translated, languaje = self.translator.translate(
             tweet.renderedContent)
         # Time end slow
-        
+
         # Clean tweets
         content = self.clean(
             content_translated, lang=languaje)
@@ -91,20 +92,48 @@ class Tweets:
         top_words = word_counts.most_common(cant)
 
         return top_words
-    
 
-    def  get_tweet_data_frecuency(self, dataframe, column):
+    """"
+    The kind of plot to produce:
+    ‘line’ : line plot (default)
+    ‘bar’ : vertical bar plot
+    ‘barh’ : horizontal bar plot
+    ‘hist’ : histogram
+    ‘box’ : boxplot
+    ‘kde’ : Kernel Density Estimation plot
+    ‘density’ : same as ‘kde’
+    ‘area’ : area plot
+    ‘pie’ : pie plot
+    ‘scatter’ : scatter plot (DataFrame only)
+    ‘hexbin’ : hexbin plot (DataFrame only)
+    """
 
-        dataframe_df = dataframe.groupby(column).size().reset_index(name="counts")
+    def get_tweet_data_frecuency(self, dataframe, column, title, kind, img_src):
+
+        # Round data to 1 decimal
+        for col in dataframe.columns:
+            dataframe[col] = round(dataframe[col], 2)
+
+        # Remove Outliers
+        Q1 = dataframe.quantile(0.25)
+        Q3 = dataframe.quantile(0.75)
+        IQR = Q3-Q1
+        dataframe = dataframe[~((dataframe < (Q1-1.5 * IQR)) | (dataframe > (Q3 + 1.5 * IQR))).any(axis=1)]
+        dataframe.shape
+        
+        # Count frecuency
+        dataframe_df = dataframe.groupby(
+            column).size().reset_index(name="counts")
 
         # Plot the frequency of each sentiment
-        dataframe_df.plot(kind="bar", x="counts", y=column, color="blue")
+        dataframe_df.plot(kind=kind, x="counts", y=column, color="blue")
 
-        plt.title(column + " Frequency")
+        plt.title(column + " Frequency for " + title)
         plt.xlabel("Frequency")
         plt.ylabel(column)
-        plt.show()
+        plt.savefig(img_src)
 
+        return IQR
 
     def tweet_to_csv(self, tweets_list, file_src, columns=['Id', 'Date', 'Content', 'Impact', 'Polarity', 'Objetivity', ], ):
 
