@@ -1,1 +1,74 @@
-{"Id":{"0":1640863468696870915,"1":1640857309302648834,"2":1640816015452897282,"3":1640766497701199898,"4":1640744988806979585,"5":1640735972806516736,"6":1640728666740072448,"7":1640723924810964992,"8":1640693332874518528,"9":1640679888154775552},"Date":{"0":1680047311000,"1":1680045842000,"2":1680035997000,"3":1680024191000,"4":1680019063000,"5":1680016913000,"6":1680015172000,"7":1680014041000,"8":1680006747000,"9":1680003542000},"Content":{"0":"day left start season lospadr let show saborganador http","1":"celebr year first meet group health expert rememb uncertain day first case appear togeth began look solut reach vaccin thank everyth save us http","2":"gferrerliber salepalacal rosamariapaya alexotaola lleontravelart clemso cordotoma canalsemocion liusantiesteban worst thing good patriot yearn freedom cuba hear project dictatorship shout day canel singao want freedom polit prison nevertheless repeat thing hear one touch legitim one","3":"theintlmagz murder d\u00eda canel one go pay http","4":"swnewcom nma littl reason capac defend must slightest p idea measur harm execut biden ye amlo leftist banana presid admir d\u00eda canel go cuba like live badli","5":"mtmmarcelobob lula scoundrel corrupt accept million odebrecht triplex oa sitio de atibaia still support dictat like maduro ortega dia canel cuba sleep spoon bed marcola pcc","6":"epigmenioibarra madman palac want etern power like murder d\u00eda canel cuba","7":"parti diaz canel other spokesmen recent day vulgar addit misrul cuba desper attract young true lack brain wrong believ win peopl favor http","8":"diazcanelb liscuestacuba ben ac\u00e1 dia canel da tanta popularidad mujer nunca a\u00f1o supo seg\u00fan investigacion ninguna trayectoria dictadura ahora mujer quier ponerla alto siempr mentira manipulacion","9":"fidel peopl shown world cuba cuban rule alway defend socialist homeland togeth ra\u00fal presid miguel d\u00eda canel worthi leader new gener let go"},"Impact":{"0":7,"1":5108,"2":4,"3":0,"4":0,"5":0,"6":55,"7":1,"8":0,"9":0},"Polarity":{"0":0.0,"1":0.25,"2":-0.15,"3":0.0,"4":0.0431818182,"5":-0.5,"6":0.0,"7":-0.0107142857,"8":0.0,"9":0.1363636364},"Objetivity":{"0":0.0,"1":0.3333333333,"2":0.8,"3":0.0,"4":0.55,"5":1.0,"6":0.0,"7":0.5392857143,"8":0.0,"9":0.4545454545}}
+{
+  "Id": {
+    "0": 1640863468696870915,
+    "1": 1640857309302648834,
+    "2": 1640816015452897282,
+    "3": 1640766497701199898,
+    "4": 1640744988806979585,
+    "5": 1640735972806516736,
+    "6": 1640728666740072448,
+    "7": 1640723924810964992,
+    "8": 1640693332874518528,
+    "9": 1640679888154775552
+  },
+  "Date": {
+    "0": 1680047311000,
+    "1": 1680045842000,
+    "2": 1680035997000,
+    "3": 1680024191000,
+    "4": 1680019063000,
+    "5": 1680016913000,
+    "6": 1680015172000,
+    "7": 1680014041000,
+    "8": 1680006747000,
+    "9": 1680003542000
+  },
+  "Content": {
+    "0": "day left start season lospadr let show saborganador http",
+    "1": "celebr year first meet group health expert rememb uncertain day first case appear togeth began look solut reach vaccin thank everyth save us http",
+    "2": "gferrerliber salepalacal rosamariapaya alexotaola lleontravelart clemso cordotoma canalsemocion liusantiesteban worst thing good patriot yearn freedom cuba hear project dictatorship shout day canel singao want freedom polit prison nevertheless repeat thing hear one touch legitim one",
+    "3": "theintlmagz murder d\u00eda canel one go pay http",
+    "4": "swnewcom nma littl reason capac defend must slightest p idea measur harm execut biden ye amlo leftist banana presid admir d\u00eda canel go cuba like live badli",
+    "5": "mtmmarcelobob lula scoundrel corrupt accept million odebrecht triplex oa sitio de atibaia still support dictat like maduro ortega dia canel cuba sleep spoon bed marcola pcc",
+    "6": "epigmenioibarra madman palac want etern power like murder d\u00eda canel cuba",
+    "7": "parti diaz canel other spokesmen recent day vulgar addit misrul cuba desper attract young true lack brain wrong believ win peopl favor http",
+    "8": "diazcanelb liscuestacuba ben day canel give much popular woman never heard year accord investig track record dictatorship wife want put top alway lie manipul",
+    "9": "fidel peopl shown world cuba cuban rule alway defend socialist homeland togeth ra\u00fal presid miguel d\u00eda canel worthi leader new gener let go"
+  },
+  "Impact": {
+    "0": 7,
+    "1": 5135,
+    "2": 4,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 55,
+    "7": 1,
+    "8": 0,
+    "9": 0
+  },
+  "Polarity": {
+    "0": 0.0,
+    "1": 0.25,
+    "2": -0.15,
+    "3": 0.0,
+    "4": 0.0431818182,
+    "5": -0.5,
+    "6": 0.0,
+    "7": -0.0107142857,
+    "8": 0.55,
+    "9": 0.1363636364
+  },
+  "Objetivity": {
+    "0": 0.0,
+    "1": 0.3333333333,
+    "2": 0.8,
+    "3": 0.0,
+    "4": 0.55,
+    "5": 1.0,
+    "6": 0.0,
+    "7": 0.5392857143,
+    "8": 0.7,
+    "9": 0.4545454545
+  }
+}

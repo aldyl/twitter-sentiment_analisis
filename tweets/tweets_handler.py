@@ -106,6 +106,8 @@ class Tweets:
         for sentimiento, frecuencia in frecuencias.items():
             print(f"{sentimiento}: {frecuencia/len(sentiments)}")
 
+    
+
 
     def tweet_to_csv(self, tweets_list, file_src):
 
@@ -113,10 +115,9 @@ class Tweets:
                                  'Id', 'Date', 'Content', 'Impact', 'Polarity', 'Objetivity', ])
         tweets_df.to_csv(file_src, sep=';', decimal=',')
 
-    def tweet_to_json(self, tweets_list,  file_src):
+    def tweet_to_json(self, tweets_list, file_src, columns=['Id', 'Date', 'Content', 'Impact', 'Polarity', 'Objetivity', ], ):
 
-        tweets_df = pd.DataFrame(tweets_list, columns=[
-                                 'Id', 'Date', 'Content', 'Impact', 'Polarity', 'Objetivity', ])
+        tweets_df = pd.DataFrame(tweets_list, columns)
         tweets_df.to_json(file_src)
 
     def load_from_cvs(self, file_src):

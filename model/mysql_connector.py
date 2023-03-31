@@ -1,6 +1,7 @@
 import mysql.connector
 from mysql.connector import errorcode, Error, MySQLConnection
 
+DEBUG = True
 
 class MysqlConnector:
     def __init__(self):
@@ -71,7 +72,7 @@ CREATE TABLE tweets (
 
         for tweet in tweets:
             
-            if not self.tweet_en_bd(tweet[0]):
+            if self.tweet_en_bd(tweet[0]) is not None:
                 # Inserción de un nuevo tweet
                 val = (tweet[0], tweet[1], tweet[2], tweet[3], tweet[4], tweet[5])
                     
@@ -101,28 +102,28 @@ CREATE TABLE tweets (
             resultado = cursor.fetchone()
         except mysql.connector.Error as err:
                     print(f"Error al ejecutar la consulta: {err}")
-
+        
+        if DEBUG: print(consulta)
         # si se encontró el tweet en la base de datos, devolver True
-        if resultado is not None:
-            return True
-        else:
-            return False
+        return resultado
     
-    
-    def get_tweets_from_table_id(self, id):
+    # (Id, Date, Content, Impact, Polarity, Objective) 
+    def get_tweet_timelapse_bd(self, columns='*', since='', until=''):
         
         cursor = self.cnx.cursor()
-       
-        query = "SELECT * FROM tweets WHERE %s == tweets.Id"
-        
-        cursor.execute(query)
 
-        tweets = cursor.fetchall()
+        # ejecutar la consulta para verificar si el tweet existe
+        consulta = f"SELECT {columns} FROM tweets WHERE Date >= \"{since}\" and Date <= \"{until}\" "
 
-        cursor.close()
+        try:
+            cursor.execute(consulta)
+            # obtener el resultado de la consulta
+            resultado = cursor.fetchall()
 
-        self.cnx.close()
+        except mysql.connector.Error as err:
+                    print(f"Error al ejecutar la consulta: {err}")
 
-        return tweets
+        if DEBUG: print(consulta)
 
+        return resultado
 
