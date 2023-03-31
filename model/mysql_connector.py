@@ -1,24 +1,18 @@
 import mysql.connector
-from mysql.connector import errorcode, Error
+from mysql.connector import errorcode, Error, MySQLConnection
 
 
 class MysqlConnector:
     def __init__(self):
-        
-        self.cnx = any
+        self.cnx = MySQLConnection()
 
-        self.TABLA_TWEETS = """
-CREATE TABLE tweets (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  tweet VARCHAR(255) NOT NULL,
-  sentiment int(8)
-)
-"""
-
-    def connect(self, user_I='root', password_I='root', host_I='localhost', database_I='tweets_bd'):
+    def connect(self, user_I='twitter', password_I='password', host_I='localhost', database_I='tweets_bd'):
         # Establecer la conexión a la base de datos
         try:
-            self.cnx = mysql.connector.connect(user=user_I, password=password_I, host=host_I, database=database_I)
+            self.cnx = mysql.connector.connect(user=user_I, password=password_I,
+                                                host=host_I, database=database_I,
+                                                auth_plugin='mysql_native_password')
+                                                
 
             db_Info = self.cnx.get_server_info()
             print("Connected to MySQL Server version ", db_Info)
@@ -35,7 +29,7 @@ CREATE TABLE tweets (
             elif err.errno == errorcode.ER_BAD_DB_ERROR:
                 print("Database does not exist")
             else:
-                print(err)
+                print("Other",err)
 
     def close(self):
         if self.cnx.is_connected():
@@ -43,6 +37,18 @@ CREATE TABLE tweets (
             print("MySQL connection is closed")
 
     def create_tweet_table(self):
+
+        self.TABLA_TWEETS = """
+CREATE TABLE tweets (
+  Id NUMERIC(30) UNSIGNED NOT NULL,
+  Date DATE NOT NULL,
+  Content TEXT NOT NULL,
+  Impact FLOAT NOT NULL,
+  Polarity FLOAT NOT NULL,
+  Objective FLOAT NOT NULL,
+  PRIMARY KEY (Id)
+);
+"""
 
         cursor = self.cnx.cursor()
         
@@ -56,25 +62,48 @@ CREATE TABLE tweets (
 
     def insert_tweet_on_table(self, tweets):
 
-        cursor = self.get_cursor()
+        cursor = self.cnx.cursor()
+
 
         for tweet in tweets:
             
-            agregar_tweet = """
-INSERT INTO tweets (tweet) VALUES (%s)
-"""
-        cursor.execute(agregar_tweet, (tweet,))
-        
-        self.cnx.commit()
-        cursor.close()
-        self.cnx.close()
+            if not self.tweet_en_bd(tweet[0]):
+                # Inserción de un nuevo tweet
+                sql = "INSERT INTO tweets (Id, Date, Content, Impact, Polarity, Objective) VALUES (%s, %s, %s, %s, %s, %s)"
+                val = (int(tweet[0]), tweet[1], tweet[2], tweet[3], tweet[4], tweet[5])
+            
+                try:
+                    cursor.execute(sql, val)
+                    # Confirmación de cambios
+                    self.cnx.commit()
+                except mysql.connector.Error as err:
+                    print(f"Error al crear el registro: {err}")
 
+        print(cursor.rowcount, "registros insertados.")
+                
+      
 
-    def get_tweets_from_table(self):
+    def tweet_en_bd(self, tweet_id):
+        cursor = self.cnx.cursor()
+
+        # ejecutar la consulta para verificar si el tweet existe
+        consulta = f"SELECT * FROM tweets WHERE Id = {tweet_id}"
+        cursor.execute(consulta)
+        # obtener el resultado de la consulta
+        resultado = cursor.fetchone()
+
+        # si se encontró el tweet en la base de datos, devolver True
+        if resultado is not None:
+            return True
+        else:
+            return False
+    
+    
+    def get_tweets_from_table_id(self, id):
         
         cursor = self.cnx.cursor()
        
-        query = "SELECT tweet,sentiment FROM tweets"
+        query = "SELECT * FROM tweets WHERE %s == tweets.Id"
         
         cursor.execute(query)
 
