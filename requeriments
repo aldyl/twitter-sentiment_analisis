@@ -5,3 +5,4 @@ nltk
 deep_translator
 snscrape
 pandas
+matplotlib

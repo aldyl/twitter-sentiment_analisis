@@ -22,7 +22,10 @@ msql.connect()
 startDate = datetime.datetime(2023, 1, 1)
 stopDate = datetime.datetime(2023, 3, 31)
 
-tweets = msql.get_tweet_timelapse_bd(columns='Impact', since=startDate, until=stopDate)
+tweets = msql.get_tweet_timelapse_bd(columns='Polarity', since=startDate, until=stopDate)
 
-print(tweets)
+tweet_df = tweet_handler.tweet_to_json(tweets, "con.json", columns=['Polarity'])
+
+tweet_handler.get_tweet_data_frecuency(tweet_df, "Polarity")
+
 msql.close()

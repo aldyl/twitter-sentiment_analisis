@@ -1,7 +1,7 @@
 import mysql.connector
 from mysql.connector import errorcode, Error, MySQLConnection
 
-DEBUG = True
+DEBUG =  False
 
 class MysqlConnector:
     def __init__(self):
@@ -108,7 +108,7 @@ CREATE TABLE tweets (
         return resultado
     
     # (Id, Date, Content, Impact, Polarity, Objective) 
-    def get_tweet_timelapse_bd(self, columns='*', since='', until=''):
+    def get_tweet_timelapse_bd(self, columns='*', since='', until='') -> list:
         
         cursor = self.cnx.cursor()
 

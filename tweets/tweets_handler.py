@@ -1,7 +1,9 @@
 
 import string
 import re
+
 import pandas as pd
+import matplotlib.pyplot as plt
 
 import nltk
 from nltk.corpus import stopwords
@@ -91,34 +93,34 @@ class Tweets:
         return top_words
     
 
-    def  get_tweet_frecuency(self, tweets_list):
+    def  get_tweet_data_frecuency(self, dataframe, column):
 
-        sentiments = []
+        dataframe_df = dataframe.groupby(column).size().reset_index(name="counts")
 
-        for tweet in tweets_list:
+        # Plot the frequency of each sentiment
+        dataframe_df.plot(kind="bar", x="counts", y=column, color="blue")
 
-            sentiments += tweet[4].split()
-        
-        # Calcular la frecuencia del sentimiento de los tweets
-        frecuencias = nltk.FreqDist(sentiments)
-
-        # Mostrar los resultados
-        for sentimiento, frecuencia in frecuencias.items():
-            print(f"{sentimiento}: {frecuencia/len(sentiments)}")
-
-    
+        plt.title(column + " Frequency")
+        plt.xlabel("Frequency")
+        plt.ylabel(column)
+        plt.show()
 
 
-    def tweet_to_csv(self, tweets_list, file_src):
+    def tweet_to_csv(self, tweets_list, file_src, columns=['Id', 'Date', 'Content', 'Impact', 'Polarity', 'Objetivity', ], ):
 
-        tweets_df = pd.DataFrame(tweets_list, columns=[
-                                 'Id', 'Date', 'Content', 'Impact', 'Polarity', 'Objetivity', ])
+        tweets_df = pd.DataFrame(tweets_list, columns=columns)
+
         tweets_df.to_csv(file_src, sep=';', decimal=',')
+
+        return tweets_df
 
     def tweet_to_json(self, tweets_list, file_src, columns=['Id', 'Date', 'Content', 'Impact', 'Polarity', 'Objetivity', ], ):
 
-        tweets_df = pd.DataFrame(tweets_list, columns)
+        tweets_df = pd.DataFrame(tweets_list, columns=columns)
+
         tweets_df.to_json(file_src)
+
+        return tweets_df
 
     def load_from_cvs(self, file_src):
         data = pd.read_csv(file_src)

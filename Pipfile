@@ -13,6 +13,7 @@ deep-translator = "*"
 snscrape = "*"
 pandas = "*"
 async-google-trans-new = "*"
+matplotlib = "*"
 
 [dev-packages]
 autopep8 = "*"
