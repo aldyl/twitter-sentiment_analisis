@@ -1,25 +1,32 @@
 import mysql.connector
 from mysql.connector import errorcode, Error, MySQLConnection
 
-DEBUG =  False
+DEBUG = False
+
 
 class MysqlConnector:
-    def __init__(self):
+    def __init__(self, user, password,
+                 host, database):
         self.cnx = MySQLConnection()
 
-    def connect(self, user_I='twitter', password_I='password', host_I='localhost', database_I='tweets_bd'):
+        self.user = user
+        self.password = password
+        self.host = host
+        self.database = database
+
+    def connect(self):
         # Establecer la conexión a la base de datos
         try:
-            self.cnx = mysql.connector.connect(user=user_I, password=password_I,
-                                                host=host_I, database=database_I,
-                                                auth_plugin='mysql_native_password')
-                                                
+            self.cnx = mysql.connector.connect(user=self.user, password=self.password,
+                                               host=self.host, database=self.database,
+                                               auth_plugin='mysql_native_password')
 
             db_Info = self.cnx.get_server_info()
             print("Connected to MySQL Server version ", db_Info)
 
             cursor = self.cnx.cursor()
             cursor.execute("select database();")
+
             record = cursor.fetchone()
             print("You're connected to database: ", record)
 
@@ -30,14 +37,15 @@ class MysqlConnector:
             elif err.errno == errorcode.ER_BAD_DB_ERROR:
                 print("Database does not exist")
             else:
-                print("Other",err)
+                print("Other", err)
 
     def close(self):
         if self.cnx.is_connected():
             self.cnx.close()
+
             print("MySQL connection is closed")
 
-    def create_tweet_table(self, table="tweets"):
+    def create_tweet_table(self, table):
 
         self.TABLA_TWEETS = f"""
 CREATE TABLE {table} (
@@ -50,80 +58,118 @@ CREATE TABLE {table} (
   PRIMARY KEY (Id)
 );
 """
-
-        cursor = self.cnx.cursor()
-        
         try:
-            cursor.execute(self.TABLA_TWEETS)
+            self.cnx.connect()
+            cursor = self.cnx.cursor()
+            if cursor.execute(f"SHOW TABLES LIKE '{table}';") is None:
+                cursor.execute(self.TABLA_TWEETS)
+                print("Table {table}, build ok")
+            else:
+                print("Table {table}, are present")
+
         except mysql.connector.Error as err:
-            print(f"Error al crear la tabla: {err}")
-        else:
-            print("Tabla creada correctamente")
+
+            print(f"Look this error for table {table} : \n {err}")
+
+        finally:
+            self.cnx.close()
 
 
-    def insert_tweet_on_table(self, table="tweets", tweets=[]):
-        
-        cant_tweet_insertados = 0
-        cant_tweet_repetidos = 0
+    def insert_tweet_on_table(self, table, tweets):
+
+        cant_tweet_inserted = 0
+        cant_tweet_repeated = 0
 
         sql = f"INSERT INTO {table} (Id, Date, Content, Impact, Polarity, Objective) VALUES (%s, %s, %s, %s, %s, %s)"
- 
+
         cursor = self.cnx.cursor()
 
-        for tweet in tweets:
+        try:
             
-            if self.tweet_en_bd(table=table, tweet_id=tweet[0]) is None:
-                # Inserción de un nuevo tweet
-                val = (tweet[0], tweet[1], tweet[2], tweet[3], tweet[4], tweet[5])
-                    
+            self.cnx.connect()
+
+            for tweet in tweets:
+
                 try:
-                    cursor.execute(sql, val)
-                    # Confirmación de cambios
-                    self.cnx.commit()
-                    cant_tweet_insertados+=1
+                    if self.tweet_en_bd(table, tweet_id=tweet[0]) is None:
+                        # Insert new tweet
+                        val = (tweet[0], tweet[1], tweet[2], tweet[3], tweet[4], tweet[5])
+
+                        cursor = self.cnx.cursor()
+
+                        cursor.execute(sql, val)
+
+                        self.cnx.commit()
+
+                        cant_tweet_inserted += 1
+
+                    else:
+
+                        cant_tweet_repeated += 1
+
                 except mysql.connector.Error as err:
-                    print(f"Error al crear el registro: {err}")
-            else:
-                cant_tweet_repetidos+=1
 
-        print(cant_tweet_insertados, " registros insertados.")
-        print(cant_tweet_repetidos, " registros repetidos.")
+                        print(f"Error al crear el registro: {err}")
                 
-      
-    def tweet_en_bd(self, table="", tweet_id=0):
-        cursor = self.cnx.cursor()
+                finally:
+                        cursor.close()
+                  
+        finally:
+            self.cnx.close()
 
-        # ejecutar la consulta para verificar si el tweet existe
-        consulta = f"SELECT * FROM {table} WHERE Id = {tweet_id}"
-        
-        try:
-            cursor.execute(consulta)
-            # obtener el resultado de la consulta
-            resultado = cursor.fetchone()
-        except mysql.connector.Error as err:
-                    print(f"Error al ejecutar la consulta: {err}")
-        
-        if DEBUG: print(consulta)
-        # si se encontró el tweet en la base de datos, devolver True
-        return resultado
-    
-    # (Id, Date, Content, Impact, Polarity, Objective) 
-    def get_tweet_timelapse_bd(self, table="", columns='*', since='', until='') -> list:
-        
-        cursor = self.cnx.cursor()
 
-        # ejecutar la consulta para verificar si el tweet existe
-        consulta = f"SELECT {columns} FROM {table} WHERE Date >= \"{since}\" and Date <= \"{until}\" "
+        if DEBUG:
+            print("Inser into SQL db")
+            print(cant_tweet_inserted, " registros insertados.")
+            print(cant_tweet_repeated, " registros repetidos.")
+
+    def tweet_en_bd(self, table, tweet_id):
+
+        consult = f"SELECT * FROM {table} WHERE Id = {tweet_id}"
 
         try:
-            cursor.execute(consulta)
-            # obtener el resultado de la consulta
-            resultado = cursor.fetchall()
+            self.cnx.connect()
+
+            cursor = self.cnx.cursor()
+
+            cursor.execute(consult)
+            result = cursor.fetchone()
+            cursor.close()
 
         except mysql.connector.Error as err:
-                    print(f"Error al ejecutar la consulta: {err}")
 
-        if DEBUG: print(consulta)
+            print(f"Look this error: \n {err}")
 
-        return resultado
+        finally:
+            self.cnx.close()
+        
+        if DEBUG:
+            print(result)
 
+        return result
+
+    # (Id, Date, Content, Impact, Polarity, Objective)
+    def get_tweet_timelapse_bd(self, table, columns='*', since='', until='') -> list:
+
+        consult = f"SELECT {columns} FROM {table} WHERE Date >= \"{since}\" and Date <= \"{until}\" "
+
+        try:
+            self.cnx.connect()
+
+            cursor = self.cnx.cursor()
+
+            cursor.execute(consult)
+            result = cursor.fetchall()
+            cursor.close()
+
+        except mysql.connector.Error as err:
+
+            print(f"Look this error: \n {err}")
+
+        finally:
+            self.cnx.close()
+        
+        if DEBUG:
+            print(result)
+
+        return result

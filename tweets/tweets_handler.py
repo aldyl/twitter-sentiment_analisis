@@ -20,41 +20,61 @@ from model.mysql_connector import MysqlConnector
 from tweets.tweets_snscrape import SnscrapeTwiteer
 
 
+DEBUG = True
+
+
 class Tweets:
 
     def __init__(self) -> None:
 
         self.translator = TranslateGoogle()
         self.sn_twitter = SnscrapeTwiteer()
-        self.mysql_connector = MysqlConnector()
+        self.mysql_connector = MysqlConnector(
+            user="twitter", password="password", host="localhost", database="tweets_db")
 
-    def get_by_query(self, table="TT", query="Some", cant=100, since='', until=''):
-
+    def build_tweet_list(self, table="", query_result="", cant=100):
 
         tweet_list = []
-        sn_twitter = self.sn_twitter.get_by_query(
-            query="Some",  since=since, until=until)
 
-        tweet_list = self.build_tweet_list(table, sn_twitter,  cant)
+        tweet_found = 0
+        twwet_on_bd = 0
 
-        self.mysql_connector.connect()
-        self.mysql_connector.create_tweet_table(table=table)
-        self.mysql_connector.insert_tweet_on_table(table=table,tweets=tweet_list)
-        self.mysql_connector.close()
-
-        print("Tweets importados")
-
-    def build_tweet_list(self, table, query_sn, cant):
-
-        for i, tweet in query_sn:
+        for i, tweet in query_result:
             if i >= cant:  # max k number of tweets
                 break
 
+            tweet_found += 1
+
+            # Sns scrape documentation tweet structure ID in twwet[0]
             if self.mysql_connector.tweet_en_bd(table=table, tweet_id=tweet[0]) is None:
+                
                 tweet_list = self.tweet_process(
                     tweet_list, tweet)
+    
+            else:
+                twwet_on_bd += 1
+
+        if DEBUG:
+            print(f"Tweets scraper: found {tweet_found}, on bd: {twwet_on_bd}")
 
         return tweet_list
+
+    def get_by_query(self, table="", query="", cant=100, since='', until=''):
+
+        sn_twitter = self.sn_twitter.get_by_query(
+            query=query,  since=since, until=until)
+
+        tweet_list = self.build_tweet_list(
+            table=table, query_result=sn_twitter, cant=cant)
+
+        self.mysql_connector.create_tweet_table(table)
+
+        self.mysql_connector.insert_tweet_on_table(
+            table, tweets=tweet_list)
+        
+        self.mysql_connector.close()
+
+        print("Tweets importados")
 
     def tweet_process(self, tweet_list, tweet):
 
@@ -67,7 +87,7 @@ class Tweets:
         content = self.clean(
             content_translated, lang=languaje)
 
-        # Impact value
+        # Impact value on public tweet algotithm.
         impact = int(tweet.retweetCount) + int(tweet.likeCount)
 
         # Sentiment Objetivity

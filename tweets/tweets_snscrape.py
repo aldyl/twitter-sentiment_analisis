@@ -5,11 +5,11 @@ class SnscrapeTwiteer:
     def __init__(self) -> None:
         pass
         
-    def get_by_user(self, user='AthemAl', cant=0):
+    def get_by_user(self, user='AthemAl', since='', until=''):
 
         try:
             query_sn = enumerate(TwitterSearchScraper(
-                f'from:{user}').get_items())
+                f'from:{user} since:{since}] until:{until}').get_items())
             print("Tweets recolectados")
         except:
             print("Some error in connection to twiter")
