@@ -14,12 +14,47 @@ from collections import Counter
 
 from tweets.translate import TranslateGoogle
 
+from wordcloud import WordCloud
+
+from model.mysql_connector import MysqlConnector
+from tweets.tweets_snscrape import SnscrapeTwiteer
+
 
 class Tweets:
 
     def __init__(self) -> None:
 
         self.translator = TranslateGoogle()
+        self.sn_twitter = SnscrapeTwiteer()
+        self.mysql_connector = MysqlConnector()
+
+    def get_by_query(self, table="TT", query="Some", cant=100, since='', until=''):
+
+
+        tweet_list = []
+        sn_twitter = self.sn_twitter.get_by_query(
+            query="Some",  since=since, until=until)
+
+        tweet_list = self.build_tweet_list(table, sn_twitter,  cant)
+
+        self.mysql_connector.connect()
+        self.mysql_connector.create_tweet_table(table=table)
+        self.mysql_connector.insert_tweet_on_table(table=table,tweets=tweet_list)
+        self.mysql_connector.close()
+
+        print("Tweets importados")
+
+    def build_tweet_list(self, table, query_sn, cant):
+
+        for i, tweet in query_sn:
+            if i >= cant:  # max k number of tweets
+                break
+
+            if self.mysql_connector.tweet_en_bd(table=table, tweet_id=tweet[0]) is None:
+                tweet_list = self.tweet_process(
+                    tweet_list, tweet)
+
+        return tweet_list
 
     def tweet_process(self, tweet_list, tweet):
 
@@ -81,15 +116,28 @@ class Tweets:
         return polarity, subjectivity
 
     # Obtener las palabras más utilizadas en los tweets
-    def get_most_used_words(self, tweets_list, cant):
+    def get_most_used_words(self, content_tweets_list, cant, img_src):
+
         words = []
 
-        for tweet in tweets_list:
-
-            words += tweet[2].split()
+        for tweet in content_tweets_list:
+            for text in tweet:
+                for word in text.split(" "):
+                    words.append(word)
 
         word_counts = Counter(words)
         top_words = word_counts.most_common(cant)
+
+        cloud = {}
+        for word_a, frec_a in top_words:
+            cloud[word_a] = frec_a
+
+        word_cloud = WordCloud(
+            collocations=False, background_color="white").generate_from_frequencies(cloud)
+
+        plt.imshow(word_cloud, interpolation='bilinear')
+        plt.axis("off")
+        plt.savefig(img_src)
 
         return top_words
 
@@ -118,9 +166,10 @@ class Tweets:
         Q1 = dataframe.quantile(0.25)
         Q3 = dataframe.quantile(0.75)
         IQR = Q3-Q1
-        dataframe = dataframe[~((dataframe < (Q1-1.5 * IQR)) | (dataframe > (Q3 + 1.5 * IQR))).any(axis=1)]
+        dataframe = dataframe[~(
+            (dataframe < (Q1-1.5 * IQR)) | (dataframe > (Q3 + 1.5 * IQR))).any(axis=1)]
         dataframe.shape
-        
+
         # Count frecuency
         dataframe_df = dataframe.groupby(
             column).size().reset_index(name="counts")
@@ -128,7 +177,8 @@ class Tweets:
         # Plot the frequency of each sentiment
         dataframe_df.plot(kind=kind, x="counts", y=column, color="blue")
 
-        plt.title(column + " Frequency for " + title)
+        plt.title(column + " Frequency for " + title +
+                  " Media estadistica: " + str(IQR[0]))
         plt.xlabel("Frequency")
         plt.ylabel(column)
         plt.savefig(img_src)

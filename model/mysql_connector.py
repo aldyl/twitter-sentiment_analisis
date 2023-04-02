@@ -37,10 +37,10 @@ class MysqlConnector:
             self.cnx.close()
             print("MySQL connection is closed")
 
-    def create_tweet_table(self):
+    def create_tweet_table(self, table="tweets"):
 
-        self.TABLA_TWEETS = """
-CREATE TABLE tweets (
+        self.TABLA_TWEETS = f"""
+CREATE TABLE {table} (
   Id NUMERIC(30) UNSIGNED NOT NULL,
   Date DATE NOT NULL,
   Content TEXT NOT NULL,
@@ -61,18 +61,18 @@ CREATE TABLE tweets (
             print("Tabla creada correctamente")
 
 
-    def insert_tweet_on_table(self, tweets):
+    def insert_tweet_on_table(self, table="tweets", tweets=[]):
         
         cant_tweet_insertados = 0
         cant_tweet_repetidos = 0
 
-        sql = "INSERT INTO tweets (Id, Date, Content, Impact, Polarity, Objective) VALUES (%s, %s, %s, %s, %s, %s)"
+        sql = f"INSERT INTO {table} (Id, Date, Content, Impact, Polarity, Objective) VALUES (%s, %s, %s, %s, %s, %s)"
  
         cursor = self.cnx.cursor()
 
         for tweet in tweets:
             
-            if self.tweet_en_bd(tweet[0]) is not None:
+            if self.tweet_en_bd(table=table, tweet_id=tweet[0]) is None:
                 # Inserción de un nuevo tweet
                 val = (tweet[0], tweet[1], tweet[2], tweet[3], tweet[4], tweet[5])
                     
@@ -90,11 +90,11 @@ CREATE TABLE tweets (
         print(cant_tweet_repetidos, " registros repetidos.")
                 
       
-    def tweet_en_bd(self, tweet_id):
+    def tweet_en_bd(self, table="", tweet_id=0):
         cursor = self.cnx.cursor()
 
         # ejecutar la consulta para verificar si el tweet existe
-        consulta = f"SELECT * FROM tweets WHERE Id = {tweet_id}"
+        consulta = f"SELECT * FROM {table} WHERE Id = {tweet_id}"
         
         try:
             cursor.execute(consulta)
@@ -108,12 +108,12 @@ CREATE TABLE tweets (
         return resultado
     
     # (Id, Date, Content, Impact, Polarity, Objective) 
-    def get_tweet_timelapse_bd(self, columns='*', since='', until='') -> list:
+    def get_tweet_timelapse_bd(self, table="", columns='*', since='', until='') -> list:
         
         cursor = self.cnx.cursor()
 
         # ejecutar la consulta para verificar si el tweet existe
-        consulta = f"SELECT {columns} FROM tweets WHERE Date >= \"{since}\" and Date <= \"{until}\" "
+        consulta = f"SELECT {columns} FROM {table} WHERE Date >= \"{since}\" and Date <= \"{until}\" "
 
         try:
             cursor.execute(consulta)
