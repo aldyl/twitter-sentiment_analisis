@@ -26,8 +26,6 @@ class SnscrapeTwiteer:
             query_sn = enumerate(TwitterSearchScraper(
                 query=f'{query} since:"{since}" until:"{until}"').get_items())
 
-            print(f'{query} since:"{since}" until:"{until}"')
-
         except:
             print("Some error in connection to twiter")
 

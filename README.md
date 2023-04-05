@@ -8,6 +8,3 @@ run ./setup.sh
 # Run app
 
 pipenv run main.py
-
-
-

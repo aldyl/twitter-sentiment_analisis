@@ -23,12 +23,15 @@ class Tweets:
 
         self.table = table
 
-    def load_internet_data(self, query, max_retrieve_tweets, since, until):
-        max_descargas = 10000
+    def load_internet_data(self, query, max_retrieve_tweets, since, until, max_descargas):
+        
+        print("Módulo de descarga de tweets")
+        print(f'#{query} since:"{since}" until:"{until}"')
+
         parte = int(max_retrieve_tweets / 2)
 
         while parte > max_descargas:
-            parte = int(parte) / 2
+            parte = int(parte / 2)
 
         cant_init = 0
         delta = parte
@@ -66,38 +69,41 @@ class Tweets:
         tweet_list = []
 
         tweet_process = 0
-        tweet_on_bd = 0
+        tweet_on_bd = cant_init
+
+        print_info = False
 
         for i, tweet in query_result:
+
+            if print_info:
+                print(
+                f"descargados: {tweet_process}, on database: {tweet_on_bd} Total: {tweet_process+tweet_on_bd}")
 
             if i >= cant:  # max k number of tweets
                 break
 
-            if i < cant_init:
-                tweet_on_bd += 1
-                print(
-                    f"procesed: {tweet_process}, on database/skipped: {tweet_on_bd}")
-                continue
+            if i <=cant_init:
 
-            if DEBUG:
-                print(i, cant, tweet)
-
-            # Sns scrape documentation tweet structure ID
-
-            out = self.mysql_connector.id_on_table_bd(
-                table=self.table, id=tweet.id)
-
-            if out is None:
-
-                tweet_list = self.tweet_process(tweet_list, tweet)
-                tweet_process += 1
+                print_info = True
 
             else:
 
-                tweet_on_bd += 1
+                if DEBUG:
+                    print(i, cant, tweet)
 
-            print(
-                f"procesed: {tweet_process}, on database/skipped: {tweet_on_bd}")
+                # Sns scrape documentation tweet structure ID
+
+                out = self.mysql_connector.id_on_table_bd(
+                    table=self.table, id=tweet.id)
+
+                if out is None:
+
+                    tweet_list = self.tweet_process(tweet_list, tweet)
+                    tweet_process += 1
+
+                else:
+
+                    tweet_on_bd += 1
 
         return tweet_list
 
@@ -170,7 +176,6 @@ class Tweets:
             return "Objetivo"
         else:
             return "No Objetivos"
-        
 
     def media_probabilistica_sentimiento(self, since='', until=''):
 

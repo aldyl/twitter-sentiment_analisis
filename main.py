@@ -12,11 +12,12 @@ stopDate = datetime.datetime(2023, 3, 31)
 tweet_handler = Tweets(table=table)
 
 tweet_handler.load_internet_data(query=query,
-                     max_retrieve_tweets=max_retrieve_tweets, since=startDate, until=stopDate)
+                                 max_retrieve_tweets=max_retrieve_tweets,
+                                 since=startDate, until=stopDate, max_descargas=100)
 
 print("¿Cuáles son las 10 palabras más empleadas?\n")
 print(tweet_handler.get_most_used_words(
-    since=startDate, until=stopDate, cant=10, img_src="result/common_words.png"))
+    since=startDate, until=stopDate, cant=50, img_src="result/common_words.png"))
 
 print("¿Qué sentimiento es más intenso?")
 print(tweet_handler.get_more_intense_sentiment(
@@ -25,9 +26,9 @@ print(tweet_handler.get_more_intense_sentiment(
 print("¿Qué tan objetivos son los Tweets sobre el tema?")
 
 print(tweet_handler.get_more_objetivity(table_type="hist",
-    since=startDate, until=stopDate, img_src="result/more_objetivity.png"))
+                                        since=startDate, until=stopDate, img_src="result/more_objetivity.png"))
 
-startDate = datetime.datetime(2023, 3, 20)
+startDate = datetime.datetime(2023, 1, 20)
 stopDate = datetime.datetime(2023, 3, 31)
 print(f"Usando como muestra el periodo: \n inicio {startDate} fin: {stopDate} se espera un sentimiento: ",
       tweet_handler.media_probabilistica_sentimiento(since=startDate, until=stopDate))
