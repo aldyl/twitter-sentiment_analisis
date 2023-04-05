@@ -12,6 +12,10 @@ sudo mysql -u root -p -e  "CREATE USER 'twitter'@'localhost' IDENTIFIED WITH mys
 sudo mysql -u root -p -e  "GRANT CREATE, ALTER, DROP, INSERT, UPDATE, INDEX, DELETE, SELECT, REFERENCES, RELOAD on *.* TO ' twitter '@'localhost' WITH GRANT OPTION;"
 sudo mysql -u root -p -e "Create database tweets_bd;"
 
+sudo mkdir /var/log/mysql
+sudo chown mysql.mysql /var/log/mysql/error.log
+
 sudo -H pip3 install pipenv
 pipenv install --skip-lock  -r ./requeriments
 python3 -m nltk.downloader all
+

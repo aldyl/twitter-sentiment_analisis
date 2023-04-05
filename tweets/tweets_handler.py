@@ -1,97 +1,59 @@
 
-import string
-import re
-
-import pandas as pd
-import matplotlib.pyplot as plt
-
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem.porter import PorterStemmer
-
-from textblob import TextBlob
-from collections import Counter
-
-from tweets.translate import TranslateGoogle
-
-from wordcloud import WordCloud
-
 from model.mysql_connector import MysqlConnector
 from tweets.tweets_snscrape import SnscrapeTwiteer
+from util.data_functions import DataAnalisis
+import pandas as pd
+import numpy as np
 
 
-DEBUG = True
+DEBUG = False
 
 
 class Tweets:
 
-    def __init__(self) -> None:
+    def __init__(self, table):
 
-        self.translator = TranslateGoogle()
+        self.data_analisis = DataAnalisis()
+
         self.sn_twitter = SnscrapeTwiteer()
+
         self.mysql_connector = MysqlConnector(
-            user="twitter", password="password", host="localhost", database="tweets_db")
+            user="twitter", password="password",
+            host="localhost", database="tweets_bd")
 
-    def build_tweet_list(self, table="", query_result="", cant=100):
+        self.table = table
 
-        tweet_list = []
+    def load_internet_data(self, query, max_retrieve_tweets, since, until):
+        max_descargas = 10000
+        parte = int(max_retrieve_tweets / 2)
 
-        tweet_found = 0
-        twwet_on_bd = 0
+        while parte > max_descargas:
+            parte = int(parte) / 2
 
-        for i, tweet in query_result:
-            if i >= cant:  # max k number of tweets
+        cant_init = 0
+        delta = parte
+
+        while True:
+            if parte > max_retrieve_tweets:
                 break
 
-            tweet_found += 1
-
-            # Sns scrape documentation tweet structure ID in twwet[0]
-            if self.mysql_connector.tweet_en_bd(table=table, tweet_id=tweet[0]) is None:
-                
-                tweet_list = self.tweet_process(
-                    tweet_list, tweet)
-    
-            else:
-                twwet_on_bd += 1
-
-        if DEBUG:
-            print(f"Tweets scraper: found {tweet_found}, on bd: {twwet_on_bd}")
-
-        return tweet_list
-
-    def get_by_query(self, table="", query="", cant=100, since='', until=''):
-
-        sn_twitter = self.sn_twitter.get_by_query(
-            query=query,  since=since, until=until)
-
-        tweet_list = self.build_tweet_list(
-            table=table, query_result=sn_twitter, cant=cant)
-
-        self.mysql_connector.create_tweet_table(table)
-
-        self.mysql_connector.insert_tweet_on_table(
-            table, tweets=tweet_list)
-        
-        self.mysql_connector.close()
-
-        print("Tweets importados")
+            # Avoid memory overleak
+            self.get_by_query(query=query, cant=parte, cant_init=cant_init,
+                              since=since, until=until)
+            cant_init = parte
+            parte += delta
 
     def tweet_process(self, tweet_list, tweet):
 
-        # Critical zone translate tweets to english.
-        content_translated, languaje = self.translator.translate(
-            tweet.renderedContent)
-        # Time end slow
+        content = self.data_analisis.content_prepare(tweet.renderedContent)
 
-        # Clean tweets
-        content = self.clean(
-            content_translated, lang=languaje)
+        # Impact value on public tweet algorithm.
+        # Is used to valorate
 
-        # Impact value on public tweet algotithm.
         impact = int(tweet.retweetCount) + int(tweet.likeCount)
 
         # Sentiment Objetivity
-        polarity, objetivity = self.get_tweet_sentiment(content)
+        polarity, objetivity = self.data_analisis.get_text_sentiment(content)
 
         # Data Frame Key Id, Date, Content, Impact, Polarity, Objective
         tweet_list.append([tweet.id, tweet.date, content,
@@ -99,111 +61,147 @@ class Tweets:
 
         return tweet_list
 
-    def clean(self, tweet, lang='spanish'):
+    def build_tweet_list(self, query_result, cant, cant_init):
 
-        tokens = nltk.word_tokenize(tweet)
+        tweet_list = []
 
-        # convertir a minúsculas
-        tokens = [w.lower() for w in tokens]
+        tweet_process = 0
+        tweet_on_bd = 0
 
-        # prepare a regex para el filtrado de caracteres
-        re_punc = re.compile('[%s]' % re.escape(string.punctuation))
+        for i, tweet in query_result:
 
-        # eliminar la puntuación de cada palabra
-        stripped = [re_punc.sub('', w) for w in tokens]
+            if i >= cant:  # max k number of tweets
+                break
 
-        # eliminar los tokens restantes que no estén en orden alfabético
-        words = [word for word in stripped if word.isalpha()]
+            if i < cant_init:
+                tweet_on_bd += 1
+                print(
+                    f"procesed: {tweet_process}, on database/skipped: {tweet_on_bd}")
+                continue
 
-        # filtrar las palabras de interrupción
-        stop_words = set(stopwords.words(lang))
-        words = [w for w in words if not w in stop_words]
+            if DEBUG:
+                print(i, cant, tweet)
 
-        # derivado de las palabras a su base
-        porter = PorterStemmer()
-        words = [porter.stem(word) for word in words]
+            # Sns scrape documentation tweet structure ID
 
-        return ' '.join(map(str, words))
+            out = self.mysql_connector.id_on_table_bd(
+                table=self.table, id=tweet.id)
 
-    def get_tweet_sentiment(self, tweet):
-        # Analizar el sentimiento de los tweet
+            if out is None:
 
-        sentiment = TextBlob(str(tweet)).sentiment
+                tweet_list = self.tweet_process(tweet_list, tweet)
+                tweet_process += 1
 
-        polarity = sentiment.polarity
-        subjectivity = sentiment.subjectivity
+            else:
 
-        return polarity, subjectivity
+                tweet_on_bd += 1
 
-    # Obtener las palabras más utilizadas en los tweets
-    def get_most_used_words(self, content_tweets_list, cant, img_src):
+            print(
+                f"procesed: {tweet_process}, on database/skipped: {tweet_on_bd}")
 
-        words = []
+        return tweet_list
 
-        for tweet in content_tweets_list:
-            for text in tweet:
-                for word in text.split(" "):
-                    words.append(word)
+    def get_by_query(self, query, cant, cant_init, since='', until=''):
 
-        word_counts = Counter(words)
-        top_words = word_counts.most_common(cant)
+        sn_twitter = self.sn_twitter.get_by_query(
+            query=query,  since=since, until=until)
 
-        cloud = {}
-        for word_a, frec_a in top_words:
-            cloud[word_a] = frec_a
+        self.mysql_connector.create_tweet_table(self.table)
 
-        word_cloud = WordCloud(
-            collocations=False, background_color="white").generate_from_frequencies(cloud)
+        tweet_list = self.build_tweet_list(
+            query_result=sn_twitter, cant=cant, cant_init=cant_init)
 
-        plt.imshow(word_cloud, interpolation='bilinear')
-        plt.axis("off")
-        plt.savefig(img_src)
+        if DEBUG:
+            print(f"Resultados en memoria {len(tweet_list)}")
 
-        return top_words
+        self.mysql_connector.insert_tweet_on_table(
+            self.table, tweets=tweet_list)
 
-    """"
-    The kind of plot to produce:
-    ‘line’ : line plot (default)
-    ‘bar’ : vertical bar plot
-    ‘barh’ : horizontal bar plot
-    ‘hist’ : histogram
-    ‘box’ : boxplot
-    ‘kde’ : Kernel Density Estimation plot
-    ‘density’ : same as ‘kde’
-    ‘area’ : area plot
-    ‘pie’ : pie plot
-    ‘scatter’ : scatter plot (DataFrame only)
-    ‘hexbin’ : hexbin plot (DataFrame only)
-    """
+    # (Id, Date, Content, Impact, Polarity, Objective)
 
-    def get_tweet_data_frecuency(self, dataframe, column, title, kind, img_src):
+    def get_tweet_timelapse_bd(self, columns='*', since='', until='') -> list:
 
-        # Round data to 1 decimal
-        for col in dataframe.columns:
-            dataframe[col] = round(dataframe[col], 2)
+        return self.mysql_connector.get_timelapse_bd(table=self.table, columns=columns,
+                                                     since=since, until=until)
 
-        # Remove Outliers
-        Q1 = dataframe.quantile(0.25)
-        Q3 = dataframe.quantile(0.75)
-        IQR = Q3-Q1
-        dataframe = dataframe[~(
-            (dataframe < (Q1-1.5 * IQR)) | (dataframe > (Q3 + 1.5 * IQR))).any(axis=1)]
-        dataframe.shape
+    def get_most_used_words(self, since, until, cant, img_src):
 
-        # Count frecuency
-        dataframe_df = dataframe.groupby(
-            column).size().reset_index(name="counts")
+        columns_aux = 'Content'
 
-        # Plot the frequency of each sentiment
-        dataframe_df.plot(kind=kind, x="counts", y=column, color="blue")
+        content_list = self.get_tweet_timelapse_bd(
+            columns=columns_aux, since=since, until=until)
 
-        plt.title(column + " Frequency for " + title +
-                  " Media estadistica: " + str(IQR[0]))
-        plt.xlabel("Frequency")
-        plt.ylabel(column)
-        plt.savefig(img_src)
+        return self.data_analisis.get_most_used_words(content_list, cant, img_src)
 
-        return IQR
+    def get_more_intense_sentiment(self, table_type="bar", since='', until='', img_src=''):
+
+        columns_aux = 'Polarity'
+
+        content_list = self.get_tweet_timelapse_bd(
+            columns=columns_aux, since=since, until=until)
+
+        tweet_df = self.tweet_to_json(
+            content_list, "result/polarity.json", columns=[columns_aux])
+
+        result = self.data_analisis.get_data_frecuency(
+            tweet_df, columns_aux, self.table, table_type, img_src)
+
+        if result[0] > 0.05:
+            return "Positive"
+        elif result[0] < -0.05:
+            return "Negative"
+        else:
+            return "Neutral"
+
+    def get_more_objetivity(self, table_type="bar", since='', until='', img_src=''):
+
+        columns_aux = 'Objective'
+
+        content_list = self.get_tweet_timelapse_bd(
+            columns=columns_aux, since=since, until=until)
+
+        tweet_df = self.tweet_to_json(
+            content_list, "result/objetive.json", columns=[columns_aux])
+
+        result = self.data_analisis.get_data_frecuency(
+            tweet_df, columns_aux, self.table, table_type, img_src)
+
+        if result[0] > 0.5:
+            return "Objetivo"
+        else:
+            return "No Objetivos"
+        
+
+    def media_probabilistica_sentimiento(self, since='', until=''):
+
+        columns_aux = 'Polarity, Impact'
+
+        content_list = self.get_tweet_timelapse_bd(
+            columns=columns_aux, since=since, until=until)
+
+        polarity = []
+        impact = []
+
+        for n_tuple in content_list:
+            polarity.append(n_tuple[0])
+            impact.append(n_tuple[1] + 1)
+
+        datos = np.array(polarity)
+
+        probabilidades = np.array(impact)
+
+        result = np.sum(datos * probabilidades) / sum(probabilidades)
+
+        if result > 0.05:
+            return "Positive"
+        elif result > 0.01 and result < 0.05:
+            return "Almost positive"
+        elif result < -0.05:
+            return "Negative"
+        elif result < -0.01 and result > -0.05:
+            return "Almost positive"
+        else:
+            return "Neutral"
 
     def tweet_to_csv(self, tweets_list, file_src, columns=['Id', 'Date', 'Content', 'Impact', 'Polarity', 'Objetivity', ], ):
 
@@ -220,11 +218,3 @@ class Tweets:
         tweets_df.to_json(file_src)
 
         return tweets_df
-
-    def load_from_cvs(self, file_src):
-        data = pd.read_csv(file_src)
-        return data
-
-    def load_from_json(self, file_src):
-        data = pd.read_json(file_src)
-        return data
