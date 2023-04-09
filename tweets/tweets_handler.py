@@ -20,108 +20,97 @@ class Tweets:
         self.mysql_connector = MysqlConnector(
             user="twitter", password="password",
             host="localhost", database="tweets_bd")
+        
+        self.mysql_connector.connect()
 
         self.table = table
 
     def load_internet_data(self, query, max_retrieve_tweets, since, until, max_descargas):
-        
+
         print("Módulo de descarga de tweets")
         print(f'#{query} since:"{since}" until:"{until}"')
 
-        parte = int(max_retrieve_tweets / 2)
+        # Avoid memory overleak
+        self.get_by_query(query=query, max_retrieve_tweets=max_retrieve_tweets,
+                          since=since, until=until, max_descargas=max_descargas)
 
-        while parte > max_descargas:
-            parte = int(parte / 2)
+    def tweet_process(self, tweet_list):
 
-        cant_init = 0
-        delta = parte
+        id = []
+        date = []
+        impact = []
+        content = []
 
-        while True:
-            if parte > max_retrieve_tweets:
-                break
+        for tweet in tweet_list:
+            id.append(tweet.id)
+            date.append(tweet.date)
+            impact.append(int(tweet.retweetCount) + int(tweet.likeCount))
+            content.append(tweet.renderedContent)
 
-            # Avoid memory overleak
-            self.get_by_query(query=query, cant=parte, cant_init=cant_init,
-                              since=since, until=until)
-            cant_init = parte
-            parte += delta
+        content_translated = self.data_analisis.translate_content(content)
+        tweet_list_out = []
 
-    def tweet_process(self, tweet_list, tweet):
+        for i in range(len(id)):
+            content = self.data_analisis.clean_tweet(content_translated[i])
 
-        content = self.data_analisis.content_prepare(tweet.renderedContent)
+            polarity, objetivity = self.data_analisis.get_text_sentiment(
+                content)
 
-        # Impact value on public tweet algorithm.
-        # Is used to valorate
+            # Data Frame Key Id, Date, Content, Impact, Polarity, Objective
+            tweet_list_out.append([id[i], date[i], content,
+                               impact[i], polarity, objetivity])
 
-        impact = int(tweet.retweetCount) + int(tweet.likeCount)
+        return tweet_list_out
 
-        # Sentiment Objetivity
-        polarity, objetivity = self.data_analisis.get_text_sentiment(content)
-
-        # Data Frame Key Id, Date, Content, Impact, Polarity, Objective
-        tweet_list.append([tweet.id, tweet.date, content,
-                          impact, polarity, objetivity])
-
-        return tweet_list
-
-    def build_tweet_list(self, query_result, cant, cant_init):
+    def build_tweet_list(self, query_result, max_retrieve_tweets, max_descargas):
 
         tweet_list = []
-
         tweet_process = 0
-        tweet_on_bd = cant_init
+        tweet_on_bd = 0
 
-        print_info = False
+        delta = min(int(max_retrieve_tweets / 2), max_descargas)
 
         for i, tweet in query_result:
+            
+            print(f"descargados: {tweet_process}, on database: {tweet_on_bd} Total: {tweet_process+tweet_on_bd}")
 
-            if print_info:
-                print(
-                f"descargados: {tweet_process}, on database: {tweet_on_bd} Total: {tweet_process+tweet_on_bd}")
+            # Sns scrape documentation tweet structure ID
+            out = self.mysql_connector.id_on_table_bd(table=self.table, id=tweet.id)
 
-            if i >= cant:  # max k number of tweets
-                break
-
-            if i <=cant_init:
-
-                print_info = True
-
+            if out is None:
+                tweet_list.append(tweet)
+                tweet_process += 1
             else:
+                tweet_on_bd += 1
 
-                if DEBUG:
-                    print(i, cant, tweet)
+            if tweet_process == delta:
+                tweet_list_process = self.tweet_process(tweet_list)
+                self.mysql_connector.insert_tweet_batch_on_table(
+                    self.table, tweets=tweet_list_process)
+                tweet_list = []
+                tweet_on_bd += tweet_process
+                tweet_process = 0
 
-                # Sns scrape documentation tweet structure ID
+        # Insert any remaining tweets in the last batch
+        if tweet_list:
+            tweet_list_process = self.tweet_process(tweet_list)
+            self.mysql_connector.insert_tweet_batch_on_table(
+                self.table, tweets=tweet_list_process)
+            tweet_on_bd += tweet_process
+            tweet_process = 0
 
-                out = self.mysql_connector.id_on_table_bd(
-                    table=self.table, id=tweet.id)
+        print(f" Total: {tweet_process+tweet_on_bd}")
 
-                if out is None:
 
-                    tweet_list = self.tweet_process(tweet_list, tweet)
-                    tweet_process += 1
-
-                else:
-
-                    tweet_on_bd += 1
-
-        return tweet_list
-
-    def get_by_query(self, query, cant, cant_init, since='', until=''):
+    def get_by_query(self, query, max_retrieve_tweets, since='', until='', max_descargas=100):
 
         sn_twitter = self.sn_twitter.get_by_query(
             query=query,  since=since, until=until)
 
         self.mysql_connector.create_tweet_table(self.table)
 
-        tweet_list = self.build_tweet_list(
-            query_result=sn_twitter, cant=cant, cant_init=cant_init)
-
-        if DEBUG:
-            print(f"Resultados en memoria {len(tweet_list)}")
-
-        self.mysql_connector.insert_tweet_on_table(
-            self.table, tweets=tweet_list)
+        self.build_tweet_list(
+            query_result=sn_twitter, max_retrieve_tweets=max_retrieve_tweets, max_descargas=max_descargas)
 
     # (Id, Date, Content, Impact, Polarity, Objective)
 

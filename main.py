@@ -13,7 +13,7 @@ tweet_handler = Tweets(table=table)
 
 tweet_handler.load_internet_data(query=query,
                                  max_retrieve_tweets=max_retrieve_tweets,
-                                 since=startDate, until=stopDate, max_descargas=100)
+                                 since=startDate, until=stopDate, max_descargas=10000)
 
 print("¿Cuáles son las 10 palabras más empleadas?\n")
 print(tweet_handler.get_most_used_words(

@@ -5,9 +5,10 @@ import unicodedata
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
 import nltk
 from nltk.corpus import stopwords
-from nltk.stem.porter import PorterStemmer
+from nltk.stem import PorterStemmer
 from nltk.tokenize import TweetTokenizer
 
 from textblob import TextBlob
@@ -17,10 +18,14 @@ from wordcloud import WordCloud
 
 from tweets.translate import TranslateGoogle
 
+
 class DataAnalisis():
 
     def __init__(self) -> None:
         self.translator = TranslateGoogle()
+
+        self.stemmer = PorterStemmer()
+        self.stopwords_english = stopwords.words('english')
 
     def get_text_sentiment(self, text):
 
@@ -32,51 +37,37 @@ class DataAnalisis():
 
         return polarity, subjectivity
 
-    def clean_content(self, tweet, lang='spanish'):
+    def clean_tweet(self, tweet):
+        """ 
+        The regular expressions for removing stock market tickers,
+          retweet text, hyperlinks, and hashtags can be combined into
+            one expression using the pipe
+              operator: r'\$?\w*|^RT[\s]+|https?:\/\/.*[\r\n]*|#'."""
 
-        # remove stock market tickers like $GE
-        tweet = re.sub(r'\$\w*', '', str(tweet))
-        # remove old style retweet text "RT"
-        tweet = re.sub(r'^RT[\s]+', '', str(tweet))
-        # remove hyperlinks
-        tweet = re.sub(r'https?:\/\/.*[\r\n]*', '', str(tweet))
-        # remove hashtags
-        # only removing the hash # sign from the word
-        tweet = re.sub(r'#', '', str(tweet))
-        # tokenize tweets
-        tokenizer = TweetTokenizer(preserve_case=False, strip_handles=True,
-                               reduce_len=True)
+        tweet = str(tweet)
+
+        tweet = re.sub(r'\$?\w*|^RT[\s]+|https?:\/\/.*[\r\n]*|#', '', tweet)
+
+        emoticon_pattern = r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF\u2600-\u26FF\u2700-\u27BF\U0001F900-\U0001F9FF\U0001F1E6-\U0001F1FF\u0023-\u0039\u2000-\u206F\u20A0-\u20CF\u2100-\u214F\u2190-\u21FF\u2200-\u22FF\u2300-\u23FF\u2460-\u24FF\u25A0-\u25FF\u2600-\u26FF\u2700-\u27BF\u2B00-\u2BFF\u2900-\u297F\u3200-\u32FF\u1F910-\u1F96B\u1F980-\u1F991\u1F9C0-\u1F9C0]'
+
+        tweet = re.sub(emoticon_pattern, '', tweet)
+
+        tweet = unicodedata.normalize('NFD', tweet).encode('ASCII', 'ignore').decode('utf-8')
+
+        ascii_pattern = r'[a-zA-Z]+'
+
+        tweet = re.sub(ascii_pattern, '', tweet)       
+
+        tokenizer = TweetTokenizer(
+            preserve_case=False, strip_handles=True, reduce_len=True)
         tweet_tokens = tokenizer.tokenize(tweet)
-        # convertir a minúsculas
-        tweet_tokens = [w.lower() for w in tweet_tokens]
-        
-        stemmer = PorterStemmer()
-        stopwords_english = stopwords.words(lang)
-        
-        tweets_clean = []
-        for word in tweet_tokens:
-            if (word not in stopwords_english and  # remove stopwords
-                    word not in string.punctuation):  # remove punctuation
-                # tweets_clean.append(word)
-                stem_word = stemmer.stem(word)  # stemming word
-                tweets_clean.append(stem_word)
+        tweet_tokens = [self.stemmer.stem(w.lower()) for w in tweet_tokens if w.lower(
+        ) not in self.stopwords_english and w.lower() not in string.punctuation]
 
-        return " ".join(tweets_clean)
-        #return ' '.join(map(str, words))
+        return ' '.join(tweet_tokens)
 
-    def content_prepare(self, text):
-
-        # Critical zone translate tweets to english.
-        content_translated, languaje = self.translator.translate(
-            text)
-
-        # TODO Some tweaks to translate are run async functions on python.
-
-        # Clean tweets
-        content = self.clean_content(
-            content_translated, lang=languaje)
-
-        return content
+    def translate_content(self, content_list):
+        return self.translator.async_translate(content_list)
 
     # Obtener las palabras más utilizadas en los tweets
     # Dibujar nube de palabras
