@@ -1,6 +1,7 @@
 import string
 import re
-import unicodedata
+
+import emoji
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -23,9 +24,11 @@ class DataAnalisis():
 
     def __init__(self) -> None:
         self.translator = TranslateGoogle()
-
+        
+        self.tokenizer = TweetTokenizer(preserve_case=False, strip_handles=True, reduce_len=True)
         self.stemmer = PorterStemmer()
-        self.stopwords_english = stopwords.words('english')
+        self.stopwords_english = set(stopwords.words('english'))
+
 
     def get_text_sentiment(self, text):
 
@@ -38,29 +41,26 @@ class DataAnalisis():
         return polarity, subjectivity
 
     def clean_tweet(self, tweet):
-        """ 
-        The regular expressions for removing stock market tickers,
-          retweet text, hyperlinks, and hashtags can be combined into
-            one expression using the pipe
-              operator: r'\$?\w*|^RT[\s]+|https?:\/\/.*[\r\n]*|#'."""
 
-        tweet = str(tweet)
+        tweet = str(tweet).strip()
+        # Remove stock market tickers like $AAPL and $GOOG
+        tweet = re.sub(r'\$\w+', '', tweet)
 
-        tweet = re.sub(r'\$?\w*|^RT[\s]+|https?:\/\/.*[\r\n]*|#', '', tweet)
+        # Remove retweet text "RT"
+        tweet = re.sub(r'^RT[\s]+', '', tweet)
 
-        emoticon_pattern = r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF\u2600-\u26FF\u2700-\u27BF\U0001F900-\U0001F9FF\U0001F1E6-\U0001F1FF\u0023-\u0039\u2000-\u206F\u20A0-\u20CF\u2100-\u214F\u2190-\u21FF\u2200-\u22FF\u2300-\u23FF\u2460-\u24FF\u25A0-\u25FF\u2600-\u26FF\u2700-\u27BF\u2B00-\u2BFF\u2900-\u297F\u3200-\u32FF\u1F910-\u1F96B\u1F980-\u1F991\u1F9C0-\u1F9C0]'
+        # Remove hyperlinks
+        tweet = re.sub(r'https?:\/\/\S+', '', tweet)
 
-        tweet = re.sub(emoticon_pattern, '', tweet)
+        # Remove hashtags
+        # Only removing the hash # sign from the word
+        tweet = re.sub(r'#', '', tweet)
 
-        tweet = unicodedata.normalize('NFD', tweet).encode('ASCII', 'ignore').decode('utf-8')
+        tweet = emoji.demojize(tweet)
 
-        ascii_pattern = r'[a-zA-Z]+'
+        tweet = tweet.encode('ascii', 'ignore')
 
-        tweet = re.sub(ascii_pattern, '', tweet)       
-
-        tokenizer = TweetTokenizer(
-            preserve_case=False, strip_handles=True, reduce_len=True)
-        tweet_tokens = tokenizer.tokenize(tweet)
+        tweet_tokens = self.tokenizer.tokenize(tweet)
         tweet_tokens = [self.stemmer.stem(w.lower()) for w in tweet_tokens if w.lower(
         ) not in self.stopwords_english and w.lower() not in string.punctuation]
 

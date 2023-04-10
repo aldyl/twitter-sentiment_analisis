@@ -48,11 +48,13 @@ class Tweets:
             content.append(tweet.renderedContent)
 
         content_translated = self.data_analisis.translate_content(content)
+      
         tweet_list_out = []
 
         for i in range(len(id)):
-            content = self.data_analisis.clean_tweet(content_translated[i])
 
+            content = self.data_analisis.clean_tweet(content_translated[i])
+            
             polarity, objetivity = self.data_analisis.get_text_sentiment(
                 content)
 
@@ -71,7 +73,10 @@ class Tweets:
         delta = min(int(max_retrieve_tweets / 2), max_descargas)
 
         for i, tweet in query_result:
-            
+
+            if i >= max_retrieve_tweets:
+                break
+
             print(f"descargados: {tweet_process}, on database: {tweet_on_bd} Total: {tweet_process+tweet_on_bd}")
 
             # Sns scrape documentation tweet structure ID
@@ -83,7 +88,7 @@ class Tweets:
             else:
                 tweet_on_bd += 1
 
-            if tweet_process == delta:
+            if tweet_process >= delta:
                 tweet_list_process = self.tweet_process(tweet_list)
                 self.mysql_connector.insert_tweet_batch_on_table(
                     self.table, tweets=tweet_list_process)

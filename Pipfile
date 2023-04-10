@@ -15,6 +15,7 @@ pandas = "*"
 async-google-trans-new = "*"
 matplotlib = "*"
 wordcloud = "*"
+emoji = "*"
 
 [dev-packages]
 autopep8 = "*"

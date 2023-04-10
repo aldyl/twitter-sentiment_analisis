@@ -23,11 +23,11 @@ class TranslateGoogle:
 
         return result, self.lang
 
-    async def translate_tweet(self, tweet):
+    async def translate_tweet(self, id, tweet):
         try:
+            print(id, end="->")
             content_translated = await self.loop.run_in_executor(None, self.babylon.translate, tweet)
-            print("#",end="")
-            return content_translated
+            return [(id, content_translated)]
         except Exception as e:
             print(f"Translation failed: {e}")
             return ""
@@ -35,16 +35,20 @@ class TranslateGoogle:
     async def translate_tweets(self, tweets):
 
         translated_tweets = []
-        tasks = [asyncio.ensure_future(self.translate_tweet(tweet)) for tweet in tweets]
+
+        tasks = [asyncio.ensure_future(self.translate_tweet(id, tweet)) for id, tweet in enumerate(tweets)]
         completed_tasks, _ = await asyncio.wait(tasks)
         
         for task in completed_tasks:
             translated_tweets.append(task.result())
-        
-        return translated_tweets
+
+        translated_tweets.sort(key=lambda x: x[0])
+
+        return [translated[0][1] for translated in translated_tweets]
     
     
     def async_translate(self, tweets):
+
         translated_tweets = self.loop.run_until_complete(self.translate_tweets(tweets))
         return translated_tweets
 
